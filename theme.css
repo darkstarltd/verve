@@ -1,0 +1,368 @@
+/*
+  PROVERVE THEME v1.0
+  by Darkstar Realities
+
+  This file contains the foundational styles for the Proverve application UI.
+  It leverages CSS variables defined in the main HTML file for a consistent and themeable experience.
+*/
+
+/* ==========================================================================
+   Base Styles & Resets
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  /* Smoother font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  overflow: hidden; /* Prevent body scroll for the main app layout */
+}
+
+/* ==========================================================================
+   Scrollbar Styling
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-surface-light);
+  border-radius: 20px;
+  border: 2px solid var(--color-background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border);
+}
+
+
+/* ==========================================================================
+   Buttons & Inputs
+   ========================================================================== */
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+  color: inherit;
+  transition: all 0.2s ease-in-out;
+}
+
+button {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Base input styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+    background-color: var(--color-surface-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+}
+
+textarea {
+    min-height: 80px;
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   Tooltips (Tippy.js Theme)
+   ========================================================================== */
+
+.tippy-box[data-theme~='proverve'] {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.tippy-box[data-theme~='proverve'][data-placement^='top'] > .tippy-arrow::before {
+  border-top-color: var(--color-border);
+}
+
+.tippy-box[data-theme~='proverve'][data-placement^='bottom'] > .tippy-arrow::before {
+  border-bottom-color: var(--color-border);
+}
+
+.tippy-box[data-theme~='proverve'][data-placement^='left'] > .tippy-arrow::before {
+  border-left-color: var(--color-border);
+}
+
+.tippy-box[data-theme~='proverve'][data-placement^='right'] > .tippy-arrow::before {
+  border-right-color: var(--color-border);
+}
+
+/* ==========================================================================
+   Drag and Drop specific styles
+   ========================================================================== */
+
+.drag-overlay {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+  transform: scale(1.05);
+  cursor: grabbing;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+  border: 2px dashed var(--color-primary);
+  background-color: var(--color-primary-hover-faded);
+}
+
+.sortable-chosen {
+  cursor: grabbing;
+}
+
+
+/* ==========================================================================
+   Application specific UI components
+   ========================================================================== */
+.element-chrome {
+  position: absolute;
+  inset: -2px; /* to account for the border */
+  pointer-events: none;
+  border: 2px solid var(--color-primary);
+  border-radius: inherit; /* Inherit border-radius from the child */
+  z-index: 10;
+  transition: all 0.2s ease-in-out;
+}
+
+ .element-chrome-toolbar {
+  position: absolute;
+  top: -32px;
+  left: -2px;
+  background-color: var(--color-primary);
+  color: var(--color-primary-contrast);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: all;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+ }
+
+ .element-chrome-actions {
+    display: flex;
+    gap: 8px;
+ }
+
+ .element-chrome-actions button {
+    background: none;
+    border: none;
+    color: var(--color-primary-contrast);
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.2s;
+    padding: 2px;
+ }
+ .element-chrome-actions button:hover {
+   opacity: 1;
+   transform: scale(1.1);
+ }
+
+ .element-chrome-drag-handle {
+  cursor: move;
+  touch-action: none;
+ }
+
+/* Drop indicator for drag and drop */
+.drop-indicator {
+  height: 4px;
+  background-color: var(--color-accent);
+  border-radius: 2px;
+  margin: 2px 0;
+  z-index: 20;
+  box-shadow: 0 0 10px var(--color-accent);
+}
+
+/* Context Menu */
+.context-menu {
+  position: fixed;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 50;
+  min-width: 150px;
+  padding: 0.25rem;
+  animation: fadeIn 0.1s ease-out;
+}
+.context-menu-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.2s, color 0.2s;
+}
+.context-menu-item:hover {
+  background-color: var(--color-surface-light);
+}
+.context-menu-item.delete:hover {
+  background-color: var(--color-danger);
+  color: white;
+}
+.context-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 49;
+}
+
+
+/* Code Panel Resize Handle */
+.code-panel-resize-handle {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-surface);
+  cursor: ns-resize;
+  position: absolute;
+  top: -4px;
+  left: 0;
+  z-index: 10;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.code-panel-resize-handle:after {
+  content: '';
+  width: 40px;
+  height: 4px;
+  background-color: var(--color-border);
+  border-radius: 2px;
+}
+.code-panel-resize-handle:hover {
+  background-color: var(--color-surface-light);
+}
+.code-panel-resize-handle:hover:after {
+  background-color: var(--color-primary);
+}
+
+
+/* Device Frames for Canvas */
+.device-frame {
+  border: 12px solid #111;
+  border-radius: 40px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 0 0 2px #333;
+  padding: 4px;
+  background: #111;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.device-frame:before {
+    content: '';
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 20px;
+    background: #111;
+    border-radius: 0 0 10px 10px;
+    z-index: 10;
+}
+.device-frame-inner {
+  flex: 1;
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideInUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideInLeft { from { transform: translateX(-50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes bounceIn { 0% { transform: scale(0.1); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes flicker {
+  0%, 19.9%, 22%, 62.9%, 64%, 64.9%, 70%, 100% {
+      opacity: 0.99;
+      text-shadow: -1px -1px 0 rgba(255,255,255,0.2), 1px 1px 0 rgba(0,0,0,0.5), 0 0 3px;
+  }
+  20%, 21.9%, 63%, 63.9%, 65%, 69.9% {
+      opacity: 0.4;
+      text-shadow: none;
+  }
+}
+
+/* Canvas Resizer */
+.canvas-resizer {
+  position: absolute;
+  top: 0;
+  right: -8px;
+  bottom: 0;
+  width: 16px;
+  cursor: ew-resize;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.canvas-resizer:after {
+  content: '';
+  width: 4px;
+  height: 40px;
+  background-color: var(--color-border);
+  border-radius: 2px;
+  transition: background-color 0.2s;
+}
+.canvas-resizer:hover:after {
+  background-color: var(--color-primary);
+}
+
+.transition-width {
+  transition: width 0.3s ease-in-out;
+}

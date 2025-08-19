@@ -1,0 +1,34 @@
+{
+  "name": "proverve",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "@dnd-kit/core": "6.1.0",
+    "@dnd-kit/sortable": "8.0.0",
+    "@dnd-kit/utilities": "3.2.2",
+    "@google/genai": "latest",
+    "react-hot-toast": "latest",
+    "immer": "latest",
+    "react-native": "^0.81.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "tippy.js": "6.3.7",
+    "react-monaco-editor": "0.55.0",
+    "monaco-editor": "0.45.0",
+    "react-icons": "^5.5.0",
+    "lucide-react": "^0.417.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
