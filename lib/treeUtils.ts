@@ -1,22 +1,40 @@
-
-import { Element, ResponsiveStyles } from '../types';
+import { Element, ResponsiveStyles, CustomComponent, DeepReadonly, ComponentSlot } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { produce } from 'immer';
 
-export const findElementDeep = (elements: Element[], id: string): { element: Element | null, parent: Element | null, index: number } => {
+export const findElementDeep = (elements: readonly Element[], id: string): { element: Element | null, parent: Element | null, index: number } => {
     for (const [index, element] of elements.entries()) {
-        if (element.id === id) return { element, parent: null, index };
+        if (element.id === id) return { element: element as Element, parent: null, index };
         if (element.children) {
             const childResult = findElementDeep(element.children, id);
-            if (childResult.element) return { ...childResult, parent: childResult.parent || element };
+            if (childResult.element) return { ...childResult, parent: (childResult.parent || element) as Element };
         }
     }
     return { element: null, parent: null, index: -1 };
 };
 
-export const findParentElement = (elements: Element[], id: string): Element | null => {
+export const findElementPath = (elements: readonly Element[], id: string): Element[] => {
+    const path: Element[] = [];
+    const find = (els: readonly Element[]): boolean => {
+        for (const el of els) {
+            path.push(el as Element);
+            if (el.id === id) {
+                return true;
+            }
+            if (el.children && find(el.children)) {
+                return true;
+            }
+            path.pop();
+        }
+        return false;
+    };
+    find(elements);
+    return path;
+};
+
+export const findParentElement = (elements: readonly Element[], id: string): Element | null => {
     for (const element of elements) {
-      if (element.children?.some(child => child.id === id)) return element;
+      if (element.children?.some(child => child.id === id)) return element as Element;
       if (element.children) {
         const found = findParentElement(element.children, id);
         if (found) return found;
@@ -25,28 +43,28 @@ export const findParentElement = (elements: Element[], id: string): Element | nu
     return null;
 };
 
-export const removeElement = (elements: Element[], id: string): Element[] => {
+export const removeElement = (elements: readonly Element[], id: string): Element[] => {
   return elements.reduce((acc, element) => {
     if (element.id === id) return acc;
     if (element.children) {
         const newChildren = removeElement(element.children, id);
         if (newChildren !== element.children) {
-            acc.push({ ...element, children: newChildren });
+            acc.push({ ...(element as Element), children: newChildren });
             return acc;
         }
     }
-    acc.push(element);
+    acc.push(element as Element);
     return acc;
   }, [] as Element[]);
 };
 
-export const insertElementAtIndex = (elements: Element[], parentId: string | null, index: number, newElement: Element): Element[] => {
+export const insertElementAtIndex = (elements: readonly Element[], parentId: string | null, index: number, newElement: Element): Element[] => {
   if (parentId === null) {
-    const newElements = [...elements];
+    const newElements = [...(elements as Element[])];
     newElements.splice(index, 0, newElement);
     return newElements;
   }
-  return elements.map(element => {
+  return (elements as Element[]).map(element => {
     if (element.id === parentId) {
       const newChildren = [...(element.children || [])];
       newChildren.splice(index, 0, newElement);
@@ -72,40 +90,61 @@ export const assignNewIdsToTree = (element: Element): Element => {
     return {
         ...element,
         id: uuidv4(),
+        slotId: element.type === 'slot' ? uuidv4() : undefined,
         children: element.children ? element.children.map(assignNewIdsToTree) : undefined
     };
 };
 
-/**
- * Merges a main component's base element with an instance's overrides.
- * Returns a new, resolved element suitable for rendering or code generation.
- * @param main - The main element from the CustomComponent definition.
- * @param instance - The instance element from the page's element tree.
- */
-export const mergeElements = (main: Element, instance: Element): Element => {
+const replaceSlots = (mainChildren: readonly Element[], instanceChildren: DeepReadonly<Element[]> | undefined = [], defaultSlotId: string | undefined): Element[] => {
+    return mainChildren.map(mainChild => {
+        if (mainChild.type !== 'slot') {
+            const mutableChild = JSON.parse(JSON.stringify(mainChild)) as Element;
+            // If it's a container, recurse
+            if (mutableChild.children) {
+                mutableChild.children = replaceSlots(mutableChild.children, instanceChildren, defaultSlotId);
+            }
+            return mutableChild;
+        }
+
+        // It's a slot, so replace it with children from the instance that target it
+        const childrenForThisSlot = (instanceChildren || []).filter(instanceChild =>
+            (instanceChild.slotTargetId || defaultSlotId) === mainChild.slotId
+        );
+        return JSON.parse(JSON.stringify(childrenForThisSlot)) as Element[];
+    }).flat();
+};
+
+
+export const mergeElements = (main: Element, instance: DeepReadonly<Element>, mainComponentDef: CustomComponent): Element => {
   return produce(main, draft => {
-    // Instance-specific properties that must be preserved
     draft.id = instance.id;
     draft.componentId = instance.componentId;
-
-    // Instance properties that override the main component's properties
     draft.name = instance.name;
+    
     draft.styles = {
         desktop: { ...main.styles.desktop, ...instance.styles.desktop },
         tablet: { ...main.styles.tablet, ...instance.styles.tablet },
         mobile: { ...main.styles.mobile, ...instance.styles.mobile },
     };
-    draft.props = { ...main.props, ...instance.props };
+    
+    const defaultProps: { [key: string]: any } = {};
+    if (mainComponentDef.propsDefinition) {
+        mainComponentDef.propsDefinition.forEach(propDef => {
+            defaultProps[propDef.name] = propDef.defaultValue;
+        });
+    }
 
-    // Use instance property if it exists, otherwise fall back to main component's property
+    draft.props = { ...defaultProps, ...main.props, ...instance.props };
     draft.content = instance.content ?? main.content;
     draft.tailwindClasses = instance.tailwindClasses ?? main.tailwindClasses;
-    draft.animation = instance.animation ?? main.animation;
-    draft.interactions = instance.interactions ?? main.interactions;
-    draft.dataSource = instance.dataSource ?? main.dataSource;
-
-    // Children are ALWAYS taken from the main component definition.
-    // An instance cannot define its own children, it only inherits them.
-    draft.children = main.children;
+    draft.animations = instance.animations ? JSON.parse(JSON.stringify(instance.animations)) : main.animations;
+    draft.interactions = instance.interactions ? JSON.parse(JSON.stringify(instance.interactions)) : main.interactions;
+    draft.dataSource = instance.dataSource ? JSON.parse(JSON.stringify(instance.dataSource)) : main.dataSource;
+    
+    // New Slot Logic
+    const defaultSlot = mainComponentDef.slots.find(s => s.name === 'Default Slot') || mainComponentDef.slots[0];
+    if (draft.children) {
+        draft.children = replaceSlots(draft.children, instance.children, defaultSlot?.id) as any;
+    }
   });
 };

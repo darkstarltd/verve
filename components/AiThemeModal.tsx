@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PaletteIcon } from './icons';
+import { Palette } from 'lucide-react';
 import { useIsMounted } from '../hooks/useIsMounted';
 
 interface AiThemeModalProps {
@@ -45,7 +45,7 @@ export const AiThemeModal: React.FC<AiThemeModalProps> = ({ onClose, onGenerate 
     <div className="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-[var(--color-surface)] rounded-lg shadow-xl w-full max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b border-[var(--color-border)] flex justify-between items-center">
-          <h2 className="text-lg font-bold flex items-center gap-2"><span className="text-[var(--color-primary)]"><PaletteIcon /></span> AI Theme Assistant</h2>
+          <h2 className="text-lg font-bold flex items-center gap-2"><span className="text-[var(--color-primary)]"><Palette /></span> AI Theme Assistant</h2>
           <button onClick={onClose} className="text-[var(--color-text-secondary)] hover:text-white">&times;</button>
         </div>
         <div className="p-6 space-y-4">

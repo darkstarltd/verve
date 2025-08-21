@@ -1,164 +1,125 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { CollapsibleSection } from './StylePropertyEditor';
-import { PlusIcon, TrashIcon } from './icons';
-import { StateVariable, ApiDataSource, ApiHeader } from '../types';
+import { Plus, Trash2, Database, Network, FolderTree } from 'lucide-react';
+import { AnyDataSource, RestApiDataSource, PostgresDataSource, FirestoreDataSource } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'react-hot-toast';
 
-const ClientStateEditor = () => {
-    const { state: { pages, activePageId }, dispatch } = useAppContext();
-    const activePage = pages.find(p => p.id === activePageId);
-    const stateVars = activePage?.stateDefinition || [];
-
-    const handleAddVariable = () => {
-        const newVar: StateVariable = {
-            name: `var${stateVars.length + 1}`,
-            type: 'string',
-            initialValue: ''
-        };
-        dispatch({ type: 'DEFINE_STATE_VARIABLE', payload: { variable: newVar } });
-    };
-
-    const handleUpdateVariable = (index: number, updates: Partial<StateVariable>) => {
-        const updatedVar = { ...stateVars[index], ...updates };
-        dispatch({ type: 'DEFINE_STATE_VARIABLE', payload: { variable: updatedVar, index } });
-    };
-
-    const handleDeleteVariable = (name: string) => {
-        if (window.confirm(`Are you sure you want to delete the state variable "${name}"?`)) {
-            dispatch({ type: 'DELETE_STATE_VARIABLE', payload: { name } });
-        }
-    };
-
-    return (
-        <CollapsibleSection title="Client State" defaultOpen>
-            <div className="space-y-3 p-2">
-                {stateVars.length > 0 && (
-                     <div className="grid grid-cols-12 gap-2 items-center text-xs text-[var(--color-text-secondary)] px-1">
-                        <label className="col-span-4">Name</label>
-                        <label className="col-span-3">Type</label>
-                        <label className="col-span-4">Initial Value</label>
-                    </div>
-                )}
-                {stateVars.map((v, index) => (
-                    <div key={v.name} className="grid grid-cols-12 gap-2 items-center text-sm">
-                        <input type="text" value={v.name} onChange={e => handleUpdateVariable(index, { name: e.target.value })} placeholder="Name" className="col-span-4 bg-[var(--color-background)] p-1 rounded" />
-                        <select value={v.type} onChange={e => handleUpdateVariable(index, { type: e.target.value as StateVariable['type'] })} className="col-span-3 bg-[var(--color-background)] p-1 rounded">
-                            <option value="string">String</option>
-                            <option value="number">Number</option>
-                            <option value="boolean">Boolean</option>
+const DataSourceEditor: React.FC<{
+    source: AnyDataSource,
+    onUpdate: (source: AnyDataSource) => void,
+    onDelete: (id: string) => void,
+}> = ({ source, onUpdate, onDelete }) => {
+    
+    const renderFields = () => {
+        switch(source.type) {
+            case 'rest':
+                return (
+                    <>
+                        <input type="text" value={source.url} onChange={e => onUpdate({ ...source, url: e.target.value })} placeholder="API URL" className="w-full bg-[var(--color-background)] p-1 rounded" />
+                        <select value={source.method} onChange={e => onUpdate({ ...source, method: e.target.value as RestApiDataSource['method']})} className="w-full bg-[var(--color-background)] p-1 rounded">
+                            <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
                         </select>
-                        <input type="text" value={String(v.initialValue)} onChange={e => handleUpdateVariable(index, { initialValue: e.target.value })} placeholder="Initial Value" className="col-span-4 bg-[var(--color-background)] p-1 rounded" />
-                        <button onClick={() => handleDeleteVariable(v.name)} className="col-span-1 text-gray-400 hover:text-red-500 flex justify-center"><TrashIcon /></button>
-                    </div>
-                ))}
-                <button onClick={handleAddVariable} className="w-full text-xs text-center p-1 bg-[var(--color-surface-light)] hover:bg-[var(--color-border)] rounded-md flex items-center justify-center gap-1">
-                    <PlusIcon /> Add Variable
-                </button>
-            </div>
-        </CollapsibleSection>
-    );
-};
-
-const ApiDataSourceEditor = () => {
-    const { state: { pages, activePageId }, dispatch } = useAppContext();
-    const activePage = pages.find(p => p.id === activePageId);
-    const dataSources = activePage?.apiDataSources || [];
-    const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
-
-    const handleAddSource = () => {
-        const newSource: ApiDataSource = { id: uuidv4(), name: `API ${dataSources.length + 1}`, url: '', method: 'GET', headers: [] };
-        dispatch({ type: 'ADD_API_DATA_SOURCE', payload: newSource });
-        setEditingSourceId(newSource.id);
-    };
-    
-    const handleUpdateSource = (id: string, updates: Partial<ApiDataSource>) => {
-        const source = dataSources.find(ds => ds.id === id);
-        if (source) {
-            dispatch({ type: 'UPDATE_API_DATA_SOURCE', payload: { ...source, ...updates } });
+                        <select value={source.authType} onChange={e => onUpdate({ ...source, authType: e.target.value as RestApiDataSource['authType']})} className="w-full bg-[var(--color-background)] p-1 rounded">
+                            <option value="none">No Auth</option><option value="bearer">Bearer Token</option><option value="basic">Basic Auth</option>
+                        </select>
+                         {source.authType === 'bearer' && <input type="text" value={source.bearerToken} onChange={e => onUpdate({...source, bearerToken: e.target.value})} placeholder="Bearer Token" className="w-full bg-[var(--color-background)] p-1 rounded"/>}
+                    </>
+                )
+            case 'postgres':
+                return (
+                     <>
+                        <input type="text" value={source.host} onChange={e => onUpdate({ ...source, host: e.target.value })} placeholder="Host" className="w-full bg-[var(--color-background)] p-1 rounded" />
+                        <input type="number" value={source.port} onChange={e => onUpdate({ ...source, port: parseInt(e.target.value, 10) })} placeholder="Port" className="w-full bg-[var(--color-background)] p-1 rounded" />
+                        <input type="text" value={source.database} onChange={e => onUpdate({ ...source, database: e.target.value })} placeholder="Database" className="w-full bg-[var(--color-background)] p-1 rounded" />
+                        <input type="text" value={source.user} onChange={e => onUpdate({ ...source, user: e.target.value })} placeholder="User" className="w-full bg-[var(--color-background)] p-1 rounded" />
+                     </>
+                )
+            case 'firestore':
+                 return (
+                     <input type="text" value={source.projectId} onChange={e => onUpdate({ ...source, projectId: e.target.value })} placeholder="Project ID" className="w-full bg-[var(--color-background)] p-1 rounded" />
+                 )
         }
-    };
+    }
     
-    const handleDeleteSource = (id: string) => {
-        if (window.confirm(`Are you sure you want to delete this API source?`)) {
-            dispatch({ type: 'DELETE_API_DATA_SOURCE', payload: id });
+    return (
+        <div className="bg-[var(--color-surface-light)] p-3 rounded-b-md space-y-2 text-sm">
+            <input type="text" value={source.name} onChange={e => onUpdate({ ...source, name: e.target.value })} placeholder="Source Name" className="w-full bg-[var(--color-background)] p-1 rounded font-semibold" />
+            {renderFields()}
+            <button className="w-full text-xs text-center p-1 bg-[var(--color-primary)]/80 hover:bg-[var(--color-primary)] rounded-md">Test Connection</button>
+        </div>
+    )
+}
+
+export const DataPanel: React.FC = () => {
+    const { state: { dataSources, editingComponentId }, dispatch } = useAppContext();
+    const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
+    const [isAdding, setIsAdding] = useState(false);
+
+    const handleAddSource = (type: AnyDataSource['type']) => {
+        let newSource: AnyDataSource;
+        const base = { id: uuidv4(), name: `New ${type} Source` };
+        switch(type) {
+            case 'postgres': newSource = { ...base, type, host: '', port: 5432, database: '', user: '' }; break;
+            case 'firestore': newSource = { ...base, type, projectId: '' }; break;
+            case 'rest': default: newSource = { ...base, type: 'rest', url: '', method: 'GET', headers: [], authType: 'none' };
+        }
+        dispatch({ type: 'ADD_DATA_SOURCE', payload: newSource });
+        setEditingSourceId(newSource.id);
+        setIsAdding(false);
+    };
+
+    const handleUpdate = (source: AnyDataSource) => {
+        dispatch({ type: 'UPDATE_DATA_SOURCE', payload: source });
+    };
+
+    const handleDelete = (id: string) => {
+        if (window.confirm("Are you sure? This action cannot be undone.")) {
+            dispatch({ type: 'DELETE_DATA_SOURCE', payload: id });
             if (editingSourceId === id) setEditingSourceId(null);
         }
     };
-
-    const handleHeaderChange = (sourceId: string, headerId: string, key: 'key' | 'value', value: string) => {
-        const source = dataSources.find(ds => ds.id === sourceId);
-        if (source) {
-            const newHeaders = source.headers.map(h => h.id === headerId ? {...h, [key]: value} : h);
-            handleUpdateSource(sourceId, { headers: newHeaders });
-        }
-    };
-
-    const addHeader = (sourceId: string) => {
-        const source = dataSources.find(ds => ds.id === sourceId);
-        if (source) {
-            const newHeaders = [...source.headers, {id: uuidv4(), key: '', value: ''}];
-            handleUpdateSource(sourceId, { headers: newHeaders });
-        }
+    
+    const ICONS: Record<AnyDataSource['type'], React.ReactNode> = {
+        rest: <Network size={16}/>,
+        postgres: <Database size={16}/>,
+        firestore: <FolderTree size={16}/>
     }
-    const removeHeader = (sourceId: string, headerId: string) => {
-        const source = dataSources.find(ds => ds.id === sourceId);
-        if(source) {
-             handleUpdateSource(sourceId, { headers: source.headers.filter(h => h.id !== headerId) });
-        }
+
+    if (editingComponentId) {
+        return <div className="p-4 text-center text-sm text-[var(--color-text-tertiary)]"><p>Data management is disabled while editing a component.</p></div>
     }
 
     return (
-        <CollapsibleSection title="API Data Sources" defaultOpen>
+        <CollapsibleSection title="Data Sources" defaultOpen>
             <div className="space-y-3 p-2">
                 {dataSources.map(source => (
                     <div key={source.id}>
                         <div className="flex justify-between items-center bg-[var(--color-surface-light)] p-2 rounded-t-md cursor-pointer" onClick={() => setEditingSourceId(editingSourceId === source.id ? null : source.id)}>
-                           <span className="font-semibold text-sm">{source.name}</span>
-                           <button onClick={(e) => { e.stopPropagation(); handleDeleteSource(source.id); }} className="text-gray-400 hover:text-red-500"><TrashIcon /></button>
+                           <div className="flex items-center gap-2">
+                            <span className="text-[var(--color-primary)]">{ICONS[source.type]}</span>
+                            <span className="font-semibold text-sm">{source.name}</span>
+                           </div>
+                           <button onClick={(e) => { e.stopPropagation(); handleDelete(source.id); }} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
                         </div>
-                        {editingSourceId === source.id && (
-                            <div className="bg-[var(--color-surface-light)] p-3 rounded-b-md space-y-2 text-sm">
-                                <input type="text" value={source.name} onChange={e => handleUpdateSource(source.id, {name: e.target.value})} placeholder="Name" className="w-full bg-[var(--color-background)] p-1 rounded" />
-                                <input type="text" value={source.url} onChange={e => handleUpdateSource(source.id, {url: e.target.value})} placeholder="URL" className="w-full bg-[var(--color-background)] p-1 rounded" />
-                                <select value={source.method} onChange={e => handleUpdateSource(source.id, {method: e.target.value as 'GET' | 'POST'})} className="w-full bg-[var(--color-background)] p-1 rounded">
-                                    <option value="GET">GET</option><option value="POST">POST</option>
-                                </select>
-                                <h4 className="text-xs font-bold pt-2">Headers</h4>
-                                {source.headers.map(h => (
-                                    <div key={h.id} className="grid grid-cols-12 gap-1 items-center">
-                                        <input type="text" value={h.key} onChange={e => handleHeaderChange(source.id, h.id, 'key', e.target.value)} placeholder="Key" className="col-span-5 bg-[var(--color-background)] p-1 rounded"/>
-                                        <input type="text" value={h.value} onChange={e => handleHeaderChange(source.id, h.id, 'value', e.target.value)} placeholder="Value" className="col-span-6 bg-[var(--color-background)] p-1 rounded"/>
-                                        <button onClick={() => removeHeader(source.id, h.id)} className="col-span-1 text-gray-400 hover:text-red-500 flex justify-center"><TrashIcon /></button>
-                                    </div>
-                                ))}
-                                <button onClick={() => addHeader(source.id)} className="w-full text-xs text-center p-1 bg-[var(--color-background)] hover:bg-[var(--color-border)] rounded-md flex items-center justify-center gap-1"><PlusIcon /> Add Header</button>
-                            </div>
-                        )}
+                        {editingSourceId === source.id && <DataSourceEditor source={source} onUpdate={handleUpdate} onDelete={handleDelete} />}
                     </div>
                 ))}
-                <button onClick={handleAddSource} className="w-full text-xs text-center p-1 bg-[var(--color-surface-light)] hover:bg-[var(--color-border)] rounded-md flex items-center justify-center gap-1">
-                    <PlusIcon /> Add API Source
-                </button>
+                {isAdding ? (
+                    <div className="bg-[var(--color-surface-light)] p-3 rounded-md space-y-2 text-center">
+                        <p className="text-sm font-semibold mb-3">Choose data source type:</p>
+                        <button onClick={() => handleAddSource('rest')} className="w-full p-2 bg-[var(--color-background)] hover:bg-[var(--color-border)] rounded-md">REST API</button>
+                        <button onClick={() => handleAddSource('postgres')} className="w-full p-2 bg-[var(--color-background)] hover:bg-[var(--color-border)] rounded-md">PostgreSQL</button>
+                        <button onClick={() => handleAddSource('firestore')} className="w-full p-2 bg-[var(--color-background)] hover:bg-[var(--color-border)] rounded-md">Firestore</button>
+                        <button onClick={() => setIsAdding(false)} className="w-full text-xs text-center p-1 mt-2 hover:underline text-[var(--color-text-tertiary)]">Cancel</button>
+                    </div>
+                ) : (
+                    <button onClick={() => setIsAdding(true)} className="w-full text-xs text-center p-1 bg-[var(--color-surface-light)] hover:bg-[var(--color-border)] rounded-md flex items-center justify-center gap-1">
+                        <Plus /> Add Data Source
+                    </button>
+                )}
             </div>
         </CollapsibleSection>
-    );
-};
-
-export const DataPanel: React.FC = () => {
-    const { state: { editingComponentId } } = useAppContext();
-    if (editingComponentId) {
-        return (
-            <div className="p-4 text-center text-sm text-[var(--color-text-tertiary)]">
-                <p>Data management is disabled while editing a component.</p>
-            </div>
-        )
-    }
-    return (
-        <div className="p-2">
-            <ClientStateEditor />
-            <ApiDataSourceEditor />
-        </div>
     );
 };

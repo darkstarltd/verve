@@ -66,9 +66,12 @@ export const GlobalClassesManager: React.FC = () => {
             </div>
             {selectedElementMock && (
                 <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
-                    <StylePropertyEditor 
-                        element={selectedElementMock as any} 
-                        onStyleChange={handleStyleChange}
+                    <StylePropertyEditor
+                        element={selectedElementMock as any}
+                        onStyleChange={(style, value) => handleStyleChange(style, value)}
+                        onAiResponsiveGenerated={() => {}}
+                        parentElement={null}
+                        mainComponentDef={null}
                     />
                 </div>
             )}

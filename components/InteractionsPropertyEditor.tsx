@@ -2,18 +2,19 @@ import React from 'react';
 import { Element, ActionStep, ActionType } from '../types';
 import { CollapsibleSection } from './StylePropertyEditor';
 import { useAppContext } from '../context/AppContext';
-import { PlusIcon, TrashIcon } from './icons';
+import { Plus, Trash2, Sparkles } from 'lucide-react';
 
 interface InteractionsPropertyEditorProps {
   element: Element;
   onUpdate: (interactions: ActionStep[]) => void;
+  onAiInteraction: () => void;
 }
 
-const findModalsRecursive = (elements: Element[]): Element[] => {
+const findModalsRecursive = (elements: readonly Element[]): Element[] => {
     let modals: Element[] = [];
     for (const el of elements) {
         if (el.type === 'modal') {
-            modals.push(el);
+            modals.push(el as Element);
         }
         if (el.children) {
             modals = modals.concat(findModalsRecursive(el.children));
@@ -22,10 +23,11 @@ const findModalsRecursive = (elements: Element[]): Element[] => {
     return modals;
 };
 
-export const InteractionsPropertyEditor: React.FC<InteractionsPropertyEditorProps> = ({ element, onUpdate }) => {
+export const InteractionsPropertyEditor: React.FC<InteractionsPropertyEditorProps> = ({ element, onUpdate, onAiInteraction }) => {
     const { state: { pages, activePageId } } = useAppContext();
     const activePage = pages.find(p => p.id === activePageId);
     const stateVariables = activePage?.stateDefinition || [];
+    const apiSources = activePage?.apiDataSources || [];
     const modals = activePage ? findModalsRecursive(activePage.elements) : [];
     const interactions = element.interactions || [];
 
@@ -91,6 +93,17 @@ export const InteractionsPropertyEditor: React.FC<InteractionsPropertyEditorProp
                 );
             case 'open_url':
                  return <input type="text" value={action.payload.url || ''} onChange={(e) => handleUpdatePayload(index, { url: e.target.value })} placeholder="https://example.com" className="bg-[var(--color-background)] p-1 rounded text-xs mt-2 w-full" />;
+            case 'call_api':
+                return (
+                    <select
+                        value={action.payload.apiSourceId || ''}
+                        onChange={(e) => handleUpdatePayload(index, { apiSourceId: e.target.value })}
+                        className="bg-[var(--color-background)] p-1 rounded text-xs mt-2 w-full"
+                    >
+                        <option value="">Select API Source</option>
+                        {apiSources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                );
             case 'show_modal':
             case 'hide_modal':
             case 'toggle_modal':
@@ -112,6 +125,12 @@ export const InteractionsPropertyEditor: React.FC<InteractionsPropertyEditorProp
     return (
         <CollapsibleSection title="Interactions (On Click)">
             <div className="space-y-2">
+                <button
+                    onClick={onAiInteraction}
+                    className="w-full text-xs text-center p-2 bg-[var(--color-primary)]/20 hover:bg-[var(--color-primary)]/30 text-[var(--color-primary)] rounded-md flex items-center justify-center gap-2"
+                >
+                    <Sparkles size={14} /> AI Generate
+                </button>
                 {interactions.map((action, index) => (
                     <div key={index} className="bg-[var(--color-surface-light)] p-2 rounded-md">
                         <div className="flex items-center gap-2">
@@ -130,19 +149,25 @@ export const InteractionsPropertyEditor: React.FC<InteractionsPropertyEditorProp
                                     <option value="decrement_state">Decrement State</option>
                                     <option value="toggle_state">Toggle State</option>
                                 </optgroup>
+                                <optgroup label="Data">
+                                    <option value="call_api">Call API</option>
+                                </optgroup>
                                 <optgroup label="Modals">
                                     <option value="show_modal">Show Modal</option>
                                     <option value="hide_modal">Hide Modal</option>
                                     <option value="toggle_modal">Toggle Modal</option>
                                 </optgroup>
                             </select>
-                            <button onClick={() => handleDeleteAction(index)} className="text-gray-400 hover:text-red-500"><TrashIcon /></button>
+                            <button onClick={() => handleDeleteAction(index)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
                         </div>
                         {renderPayloadEditor(action, index)}
                     </div>
                 ))}
-                <button onClick={handleAddAction} className="w-full text-xs text-center p-1 bg-[var(--color-surface-light)] hover:bg-[var(--color-border)] rounded-md flex items-center justify-center gap-1">
-                    <PlusIcon /> Add Action
+                <button
+                    onClick={handleAddAction}
+                    className="w-full text-xs text-center p-1 bg-[var(--color-surface-light)] hover:bg-[var(--color-border)] rounded-md flex items-center justify-center gap-1"
+                >
+                    <Plus /> Add Action
                 </button>
             </div>
         </CollapsibleSection>

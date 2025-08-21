@@ -1,12 +1,11 @@
 
-
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { componentLibrary } from '../constants';
 import { useDraggable } from '@dnd-kit/core';
 import { ComponentDefinition, CustomComponent } from '../types';
 import { CollapsibleSection } from './StylePropertyEditor';
-import { ComponentIcon } from './icons';
+import { Component } from 'lucide-react';
 
 const DraggableItem: React.FC<{
   id: string;
@@ -14,7 +13,8 @@ const DraggableItem: React.FC<{
   name: string;
   icon: React.ReactNode;
 }> = ({ id, data, name, icon }) => {
-    const { attributes, listeners, setNodeRef } = useDraggable({ id, data });
+    const { state: { previewMode } } = useAppContext();
+    const { attributes, listeners, setNodeRef } = useDraggable({ id, data, disabled: previewMode });
 
     return (
         <div 
@@ -52,7 +52,7 @@ export const ComponentLibrary: React.FC = () => {
                 id={`custom-component-${comp.id}`}
                 data={{ componentId: comp.id, isCustomComponent: true }}
                 name={comp.name}
-                icon={<ComponentIcon />}
+                icon={<Component size={20} />}
               />
             ))}
           </div>

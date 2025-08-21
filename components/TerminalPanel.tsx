@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react';
 
 const TerminalOutput: React.FC<{ line: string }> = ({ line }) => {
-    // This allows embedding simple inline styling/coloring in the output strings
     return <div dangerouslySetInnerHTML={{ __html: line.replace(/ /g, '&nbsp;') }} />;
 };
 
@@ -12,8 +10,6 @@ export const TerminalPanel: React.FC = () => {
     const [commandHistory, setCommandHistory] = useState<string[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const endOfTerminalRef = useRef<HTMLDivElement>(null);
-    const [height, setHeight] = useState(250);
-    const [isResizing, setIsResizing] = useState(false);
 
     const executeCommand = (command: string) => {
         const [cmd, ...args] = command.split(' ');
@@ -25,7 +21,7 @@ export const TerminalPanel: React.FC = () => {
                     '> <span class="text-cyan-400">help</span>              - Shows this help message.',
                     '> <span class="text-cyan-400">clear</span>             - Clears the terminal screen.',
                     '> <span class="text-cyan-400">date</span>              - Displays the current date and time.',
-                    '> <span class="text-cyan-400">ver</span>               - Displays the application version.',
+                    '> <span class="text-cyan-400">proverve</span>          - Displays system information.',
                     '> <span class="text-cyan-400">ls</span>                - Lists mock project files.',
                     '> <span class="text-cyan-400">flutter doctor</span>    - Checks Flutter installation status.',
                     '> <span class="text-cyan-400">npm install</span>       - Simulates installing a package.',
@@ -37,8 +33,18 @@ export const TerminalPanel: React.FC = () => {
             case 'date':
                 output = `Current time: ${new Date().toLocaleString()}`;
                 break;
-            case 'ver':
-                output = 'Pro-Verve IDE Version 2.0.1';
+            case 'proverve':
+                output = [
+                    '<span class="text-cyan-400"> ____  ____   ___  ____  ____  __    ____</span>',
+                    '<span class="text-cyan-400">(  _ \\(  _ \\ / __)(  _ \\(  _ \\(  )  (  _ \\</span>',
+                    '<span class="text-cyan-400"> ) __/ )   / \\__ \\ ) __/ )   // (_/\\ ) _ <</span>',
+                    '<span class="text-cyan-400">(__)  (__\\_) (___/(__)  (__\\_) \\____/(____/</span>',
+                    ' ',
+                    'Pro-Verve Visual Development Environment',
+                    '<span class="text-gray-500">Version:</span> 2.0.1',
+                    '<span class="text-gray-500">AI Core:</span> Gemini 2.5 Flash',
+                    '<span class="text-gray-500">Status:</span> <span class="text-green-400">All systems operational</span>'
+                ];
                 break;
             case 'ls':
                 output = [
@@ -101,36 +107,8 @@ export const TerminalPanel: React.FC = () => {
         endOfTerminalRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [history]);
 
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        setIsResizing(true);
-    }, []);
-
-    const handleMouseUp = useCallback(() => setIsResizing(false), []);
-
-    const handleMouseMove = useCallback((e: MouseEvent) => {
-        if (isResizing) {
-            const newHeight = window.innerHeight - e.clientY;
-            if (newHeight >= 100 && newHeight <= window.innerHeight * 0.8) {
-                setHeight(newHeight);
-            }
-        }
-    }, [isResizing]);
-
-    useEffect(() => {
-        if (isResizing) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isResizing, handleMouseMove, handleMouseUp]);
-
     return (
-        <div style={{ height: `${height}px` }} className="bg-black text-white font-mono text-sm relative flex flex-col flex-shrink-0">
-            <div className="code-panel-resize-handle" onMouseDown={handleMouseDown} />
+        <div className="bg-black text-white font-mono text-sm h-full flex flex-col">
             <div className="flex-1 p-4 overflow-y-auto" onClick={() => document.getElementById('terminal-input')?.focus()}>
                 {history.map((line, i) => <TerminalOutput key={i} line={line} />)}
                 <div className="flex items-center">

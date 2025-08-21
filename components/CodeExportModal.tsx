@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { generateProjectFiles, generateReactNativeFiles, generateFlutterFiles, generateKotlinFiles } from '../lib/generateCode';
 import { useAppContext } from '../context/AppContext';
@@ -9,7 +8,7 @@ interface CodeExportModalProps {
 }
 
 export const CodeExportModal: React.FC<CodeExportModalProps> = ({ onClose }) => {
-  const { state: { pages, projectType, customComponents, theme } } = useAppContext();
+  const { state: { projectName, pages, projectType, customComponents, theme, globalStateDefinition, mockApiEndpoints } } = useAppContext();
   const [generatedFiles, setGeneratedFiles] = useState<{ [fileName: string]: string }>({});
   const [selectedFile, setSelectedFile] = useState<string>('');
   
@@ -18,7 +17,7 @@ export const CodeExportModal: React.FC<CodeExportModalProps> = ({ onClose }) => 
       let files: { [fileName: string]: string };
       switch (projectType) {
         case 'web':
-          files = await generateProjectFiles(pages, customComponents, theme);
+          files = await generateProjectFiles(projectName, pages, customComponents, theme, globalStateDefinition, mockApiEndpoints);
           break;
         case 'native':
           files = generateReactNativeFiles(pages, customComponents, theme);
@@ -33,11 +32,11 @@ export const CodeExportModal: React.FC<CodeExportModalProps> = ({ onClose }) => 
           files = {};
       }
       setGeneratedFiles(files);
-      setSelectedFile(Object.keys(files)[0] || '');
+      setSelectedFile(Object.keys(files).find(name => name.endsWith('.html') || name.endsWith('.js') || name.endsWith('.css')) || Object.keys(files)[0] || '');
     };
 
     generateFiles();
-  }, [pages, projectType, customComponents, theme]);
+  }, [projectName, pages, projectType, customComponents, theme, globalStateDefinition, mockApiEndpoints]);
 
   const handleDownload = (fileName: string, content: string) => {
     const blob = new Blob([content], { type: 'text/plain' });
@@ -62,40 +61,38 @@ export const CodeExportModal: React.FC<CodeExportModalProps> = ({ onClose }) => 
           <button onClick={onClose} className="text-gray-400 hover:text-white">&times;</button>
         </div>
         
-        {fileNames.length > 0 && (
-          <>
-            <div className="p-4 flex gap-4">
-              <div className="flex-1">
-                <label htmlFor="file-selector" className="text-sm font-medium text-gray-400">Preview File:</label>
-                <select
-                  id="file-selector"
-                  value={selectedFile}
-                  onChange={(e) => setSelectedFile(e.target.value)}
-                  className="w-full mt-1 bg-[var(--color-surface-light)] rounded-md p-2 text-sm text-white border border-[var(--color-border)] focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
-                >
-                  {fileNames.map(name => <option key={name} value={name}>{name}</option>)}
-                </select>
-              </div>
+        {fileNames.length > 0 ? (
+          <div className="flex-1 flex overflow-hidden">
+            <div className="w-1/4 bg-[var(--color-surface)] p-4 overflow-y-auto">
+                <h3 className="font-bold mb-2">Project Files</h3>
+                {fileNames.map(name => (
+                    <div key={name} onClick={() => setSelectedFile(name)} className={`p-2 rounded-md cursor-pointer text-sm ${selectedFile === name ? 'bg-[var(--color-primary)]' : 'hover:bg-[var(--color-surface-light)]'}`}>
+                        {name}
+                    </div>
+                ))}
             </div>
-
-            <div className="flex-1 p-4 pt-0 overflow-hidden">
-              <pre className="bg-gray-900 text-sm rounded-md p-4 h-full overflow-auto text-cyan-300 whitespace-pre-wrap">
+            <div className="w-3/4 flex flex-col p-4 overflow-hidden">
+              <pre className="bg-gray-900 text-sm rounded-md p-4 flex-1 overflow-auto text-cyan-300 whitespace-pre-wrap">
                 <code>{generatedFiles[selectedFile] || 'No file selected.'}</code>
               </pre>
             </div>
-            <div className="p-4 border-t border-gray-700 flex justify-end gap-3">
-               {fileNames.map(fileName => (
-                 <button 
-                    key={fileName}
-                    onClick={() => handleDownload(fileName, generatedFiles[fileName])}
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-sm"
-                  >
-                    Download {fileName}
-                  </button>
-               ))}
+          </div>
+        ) : (
+            <div className="flex-1 flex items-center justify-center">
+                <p>Generating files...</p>
             </div>
-          </>
         )}
+        <div className="p-4 border-t border-gray-700 flex justify-end gap-3">
+            {fileNames.map(fileName => (
+              <button 
+                key={fileName}
+                onClick={() => handleDownload(fileName, generatedFiles[fileName])}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-sm"
+              >
+                Download {fileName}
+              </button>
+            ))}
+        </div>
       </div>
     </div>
   );

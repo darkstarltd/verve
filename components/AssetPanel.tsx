@@ -1,9 +1,51 @@
-
 import React, { useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
-import { UploadIcon, TrashIcon } from './icons';
+import { Upload, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useDraggable } from '@dnd-kit/core';
+import { Asset } from '../types';
+
+const DraggableAsset: React.FC<{ asset: Asset }> = ({ asset }) => {
+    const { state: { previewMode } } = useAppContext();
+    const { attributes, listeners, setNodeRef } = useDraggable({
+        id: `asset-${asset.id}`,
+        data: {
+            assetId: asset.id,
+            isAsset: true,
+        },
+        disabled: previewMode,
+    });
+    const { dispatch } = useAppContext();
+
+    const handleDelete = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this asset?')) {
+            dispatch({ type: 'DELETE_ASSET', payload: id });
+        }
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            className="group relative aspect-square bg-[var(--color-surface-light)] rounded-md overflow-hidden cursor-grab"
+        >
+            <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
+                <p className="text-xs text-white truncate">{asset.name}</p>
+                <button
+                    onClick={(e) => handleDelete(e, asset.id)}
+                    className="self-end p-1 bg-red-600/80 hover:bg-red-500 rounded-full"
+                >
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
 
 export const AssetPanel: React.FC = () => {
     const { state: { assets }, dispatch } = useAppContext();
@@ -30,13 +72,6 @@ export const AssetPanel: React.FC = () => {
         }
     };
 
-    const handleDelete = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
-        if (window.confirm('Are you sure you want to delete this asset?')) {
-            dispatch({ type: 'DELETE_ASSET', payload: id });
-        }
-    };
-
     return (
         <div className="p-4">
             <input
@@ -50,7 +85,7 @@ export const AssetPanel: React.FC = () => {
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full mb-4 px-4 py-2 bg-[var(--color-surface-light)] hover:bg-[var(--color-border)] text-sm font-medium rounded-md flex items-center justify-center gap-2"
             >
-                <UploadIcon /> Upload Asset
+                <Upload /> Upload Asset
             </button>
             <div className="space-y-2">
                 {assets.length === 0 ? (
@@ -58,18 +93,7 @@ export const AssetPanel: React.FC = () => {
                 ) : (
                     <div className="grid grid-cols-3 gap-2">
                         {assets.map(asset => (
-                            <div key={asset.id} className="group relative aspect-square bg-[var(--color-surface-light)] rounded-md overflow-hidden">
-                                <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
-                                    <p className="text-xs text-white truncate">{asset.name}</p>
-                                    <button
-                                        onClick={(e) => handleDelete(e, asset.id)}
-                                        className="self-end p-1 bg-red-600/80 hover:bg-red-500 rounded-full"
-                                    >
-                                        <TrashIcon />
-                                    </button>
-                                </div>
-                            </div>
+                           <DraggableAsset key={asset.id} asset={asset} />
                         ))}
                     </div>
                 )}
